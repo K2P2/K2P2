@@ -1,5 +1,5 @@
 from grp_rep_func import * 
-from break1 import *
+from breaking import *
 
 
 class LieGroup:
