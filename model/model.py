@@ -161,6 +161,24 @@ class Model:
 			for each in args:
 				self.pr_add_flag(each)
 				self.matter.append(each)
+
+
+
+# I am assuming that Ritesh Sir will add the codes for adding matter to model.py. Once this is done, flag and slag will be defined and flags for functions that change gauge groups and susy will be set down. At this point the routine for breaking the algebra becomes available. This is a function which takes the index of the lie group as input. Once this function is called, an interactive breaking program will take over (this has to be automated later) asking the user about how the algebra is to be broken. Once this input is fully provided new attributes become available. These new attributes are:
+
+#  1. particle content: tells us how the representation is broken into smaller representations and what states of the original representation correspond to smaller representations
+#  2. higgs_info: tells us if there are singlets left after the breaking (Q: does this also check U1 charge? A: no it does not, it just returns singlets that break certain steps)
+#  3. U1_gen: gives the U1 generator (in the new basis) formed as a result of deletion of a circle in the dynkin diagram 
+#  4. gen_list: this is the list of generators of the algebra in the new broken basis(?) this currently gives only those generators that are a part of the subalgebras. Need to add codes in /liealgebra to also give matrices corresponding to other generators in the broken basis
+
+# Based on these new attributes, we need to rewrite the lagrangian : glag, flag and slag.
+
+# Steps
+
+#	1. Change the relevant file in /liealgebra to give all generators in the changed basis
+#	2. Add the routine for interactive breaking in model
+#	3. Add private functions to change glag, flag and slag
+      
 		 
 
 
