@@ -641,17 +641,32 @@ def break_algebra(fam,dim):
 	return [count,process,process_info,break_info_parent,break_info_child,network_info]
 
 def break_rep(family,dimension,highest_weight,count,process,process_info,break_info_parent,break_info_children,network_info,ad):
+
+	# global declarations 
+	#	1. total is the root space dimension of the algebra under consideration
+	#	2. trial appears in computation of U(1) elements. For full explanation see that part of the code.
+	#	3. vec_list appears in the computation of U(1) elements. It contains the simple roots (expressed as vectors in root space) corresponding to the remaining circles (after removal of a circle via ROUTE 1 of breaking) . (This is global because I use a matrix generating function outside this routine which uses vec_list as input) 
+
 	global vec_list	
 	global trial
 	global total
-	import cPickle as p
-	#print count,network_info
+
+
+	# get all algebra related information 
+	#	1. root space dimension
+	#	2. simple roots as vectors
+	#	3. positive roots -> dynkin labels for non-cartan generators
+	#	4. commutation dictionary -> commutation relation between positive roots
+	#	5. states dictionary -> states of the representation expressed as lowering operators acting on the highest weight state
+	#	6. scalar product dictionary -> dictionary of scalar products between all (including un-orthogonalized) states that appear in the comutation for states
+	# 	7. highest weight as a vector
+	#	8. dimension of the representation 
+	# 	9. matrices for the generators of the algebra, keys are numbers for cartan generators and dynkin labels for others
+	#	10. network is the graph of states (weight diagram)
+
 	total=dimension
 	sroots=find_sroots(family,dimension)
 	output=find_weights(family,dimension,highest_weight,ad)
-	#p.dump(output,g)
-	#g.close()
-	#output=p.load(g)	
 	info=find_proots(family,dimension,sroots)
 	proots=info[0]
 	com_dict=info[2]
@@ -661,55 +676,94 @@ def break_rep(family,dimension,highest_weight,count,process,process_info,break_i
 	highest_weight_vector=output[3]
 	dimension_rep=output[4]
 	mat=find_matrices(dimension,sroots,proots,com_dict,states_dict,scalar_product_dict,highest_weight_vector,dimension_rep,pdim)
-	#mat=p.load(f)
+	network=output[0]
+	network_store=network.copy()
+
+	# matlist is a list of keys and generator matrices -> same info as mat (why do I need this?)
+
 	matlist=[]
 	for keys in mat:
 		matlist.append([keys,mat[keys]])
-	#p.dump(mat,f)
-	#f.close()
+
+	# adim -> adjoint dimension which is the total number of generators 
 	adim=len(mat)
+
+	# initialize all the data to be returned
+	#	1. particle content will contain info about the broken representations and the states contained in them(as linear combination of original states)
+	#	2. U1_vectors is ?
+	#	3. U1_gen is a dictionary that returns the U1 generator created when route 1 (simply remove a circle) is employed for breaking 
+	#	4. gen_dict is a dicitonary of other generators (details need to be spelled out)
+	#	5. higgs_info is information of singlets left out after breaking 
+
 	particle_content={}
 	U1_vectors={}
-	U1_gen={}
-	network=output[0]
-	network_store=network.copy()
-	degnodelist=[]
+	U1_gen={}	
+	gen_dict={}
+	higgs_info={}
+
+	# What are these?
+
 	correspond={}
 	statelist=[]
-	higgs_info={}
-	gen_dict={}
-	#for i in range(len(states_dict)):
-	#	statelist.append(form_col_vec_ind(states_dict,range(len(states_dict)),i))
-	#newlist=[[highest_weight],statelist]
-	#particle_content[0]=[newlist]
-	for index in range(count+1):
+
+	# this has something to do with degenerate nodes (but what exactly?)
+	degnodelist=[]
+	
+
+	# START OF THE ROUTINE PROPER
+
+	for index in range(count+1):			# Iteration over each breaking step
+
+		# EACH BREAKING STEP
 		print "calculating for step", index
-		inf=network_info[index]
+		inf=network_info[index]			# contains info on A. Route of breaking B. Node removed
+
+
+		# PHASE 1
+
+
+
+		# IF ROUTE 1 (SIMPLY REMOVE A CIRCLE) IS CHOSEN
+
 		if inf[0]==1:
-			network=remove_edges(network,inf[1])
+
+			# STEP 1 : REMOVE THE CONNECTIONS CORRESPONDING TO DELETED CIRCLE IN THE WEIGHT DIAGRAM
+	
+			network=remove_edges(network,inf[1])	
+
+
+			# STEP 2 : FIND THE U(1) ELEMENT  -> Find a vector V orthogonal to simple roots (expressed as vectors in the root space) corresponding to remaining circles. V.H is the U(1) generator as it commutes with all the remaining simple roots (simple raising and lowering generators).
+
+			# storing the vectors (in root space) corresponding to remaining circles in vec_list
 			vec_list=[]
 			for dia in process[index]:
 				for nodes in dia:
 					new_vec=[0 for dim in range(total)]
 					for dim in range(total):
-						new_vec=add(new_vec,mult(sroots[dim],dia.node[nodes]['linear_comb'][dim]))
+						new_vec=add(new_vec,mult(sroots[dim],dia.node[nodes]['linear_comb'][dim])) # some of the circles might be linear combination of the initially chosen simple roots. this happens if ROUTE 2 has been employed earlier in the breaking process. In this case the lowest root that is added is a linear combination of initially chosen simple roots.
 					vec_list.append(new_vec)
+
+			# The newly chosen U(1) element must also commute with the U(1) elements chosen in earlier steps. The vectors V of earlier steps are stored in U1_vectors. This is now added to vec_list.
 			for keys in U1_vectors:
 				vec_list.append(U1_vectors[keys])
+
+			#setting up the equation for finding the vector V orthogonal to every vector in vec_list (While doing this we try all solutions which have 1 as one of the components. this is done to ignore overall scaling which leads to infinite number of solutions. however it is not known a priori whether a certain component is 0 or non-zero. we can only set a non zero component to 1. this is why all components are tried one by one. this is denoted by the variable trial. in case we have chosen a non zero component, the process yeilds a solution. otherwise it yeilds an error. 
+
 			sol=0
 			for trial in range(total):
 				A=form_trial_mat(vec_list,trial)
 				C=form_trial_vec(vec_list,trial)
 				try:
-					#print A,C
 					B=A.LUsolve(C)
 					B1=[B[j] for j in range(trial)]+[1]+[B[j] for j in range(trial,total-1,1)]
-					#print B1
 					sol=1
 					length=0
 					for num in B1:
 						length+=num**2
-					B1=mult(B1,1/sqrt(length))
+					B1=mult(B1,1/sqrt(length)) # this is V normalized
+
+					# V IS FOUND
+
 					U1_vectors[index]=B1
 					newmat=zeros(dimension_rep)
 					for num in range(len(B1)):
@@ -717,30 +771,42 @@ def break_rep(family,dimension,highest_weight,count,process,process_info,break_i
 					for i in range(newmat.shape[0]):
 						for j in range(newmat.shape[1]):
 							newmat[i*newmat.shape[1]+j]=together(newmat[i*newmat.shape[1]+j])
+
+					# U(1) ELEMENT IS FOUND (by simply computing V.H where info on H comes from mat) 
+
 					U1_gen[index]=newmat
-					#print 'newmat is', newmat
 				except (ValueError or ZeroDivisionError):
 					pass 
 				if sol==1:
 					break
 			if sol==0:
-				return Exception, "No U(1) elements found"
+				return Exception, "No U(1) elements found"   # this is a fatal error!
+
+		# IF ROUTE 2 (LOWEST ROOT ADDED AND A CIRCLE IS REMOVED) IS CHOSEN
+
 		elif inf[0]==2:
+
+			# STEP 1 : REMOVE THE CONNECTIONS CORRESPONDING TO DELETED CIRCLE IN THE WEIGHT DIAGRAM		
+
 			network=remove_edges(network,inf[1][0])
+
+			# STEP 2: CHANGE THE DYNKIN LABELS OF THE STATES IN THE WEIGHT DIAGRAM. THE PLACE CORRESPONDING TO THE DELETED CIRCLE IS TAKEN BY THE LOWEST ROOT THAT HAS BEEN ADDED
 			network=change_node_tuples(network,inf[1][0],inf[1][1],inf[1][2],inf[1][3])
+
+			# STEP 3 : ADDITIONAL CONNECTIONS CORRESPONDING TO THE LOWEST ROOTS ARE MADE IN THE WEIGHT DIAGRAM
+
 			network=join_with_new(network,inf[1][0],inf[1][4],inf[1][2],inf[1][3])
 		else:
 			pass
+
+		# PHASE 2
+		
 		graphlist=process[index]
-		#print graphlist
 		infolist=process_info[index]
-		#print infolist
 		maplist=[]
 		particle_content_list=[]
 		newnetwork=network.copy()
 		newnetwork_store=newnetwork.copy()
-		#draw(newnetwork)
-		#plt.show()
 		gen_dict[index]=[]
 		for i in range(len(graphlist)):
 			newmap=identify_dynkin(graphlist[i])['mapping']
