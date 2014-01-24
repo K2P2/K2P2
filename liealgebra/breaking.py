@@ -719,7 +719,7 @@ def break_rep(family,dimension,highest_weight,count,process,process_info,break_i
 		inf=network_info[index]			# contains info on A. Route of breaking B. Node removed
 
 
-		# PHASE 1
+		# PHASE 1 : CHANGE THE WEIGHT DIAGRAM AND RETURN U(1) GENERATOR
 
 
 
@@ -800,52 +800,75 @@ def break_rep(family,dimension,highest_weight,count,process,process_info,break_i
 			pass
 
 		# PHASE 2
-		
-		graphlist=process[index]
-		infolist=process_info[index]
+
+		# Initializing variables
+		#	1. maplist is a map between standard nomenclature of numbers on circles in the dynkin diagram to the numbers on the dynkin diagram currently present
+		#	2. particle_content_list is probably the list corresponding to this particular breaking step (?)
+		#	3. newnetwork is just a copy of the current weight diagram with some edges removed (to be modified)
+		# 	4. newnetwork_store is a stored copy of the current weight diagram
+		#	5. gen_dict[index] is the list of generators for this breaking step
+
 		maplist=[]
 		particle_content_list=[]
 		newnetwork=network.copy()
 		newnetwork_store=newnetwork.copy()
 		gen_dict[index]=[]
+		
+		# graphlist is the broken dynkin dynkin diagram at this breaking stage
+		# infolist is probably the family and dimensions of the group corresponding to the dynkin diagram at this breaking stage
+
+		graphlist=process[index]
+		infolist=process_info[index]
+
+		# STEP 1: GET THE DICTIONARY OF GENERATORS OF THE SUBALGEBRAS
+
+		
 		for i in range(len(graphlist)):
-			newmap=identify_dynkin(graphlist[i])['mapping']
-			maplist.append(newmap)
-			newnames=change_notation(process_info[index][i][0],process_info[index][i][1])
-			newfam,newdim=newnames[0],newnames[1]
-			newsroots=find_sroots(newfam,newdim)
-			newproots=find_proots(newfam,newdim,newsroots)[0]
-			l=[]
+
+			# for each broken subalgebra 
+			
+			newmap=identify_dynkin(graphlist[i])['mapping']	# map between dynkin diagrams (standard and existing)
+			maplist.append(newmap)				# adding the map to maplist
+			newnames=change_notation(process_info[index][i][0],process_info[index][i][1])	# name of the subalgebra in standard notation
+			newfam,newdim=newnames[0],newnames[1]		# assigning the standard names to variables newfam and newdim
+			newsroots=find_sroots(newfam,newdim)		# set of simple roots arranged according to standard convention 
+			newproots=find_proots(newfam,newdim,newsroots)[0]	# set of positive roots arranged according to S.C.
+
+
+			# l is a dictionary of positive roots of this subalgebra (in S.C.) expressed as positive roots of the starting algebra -> a sort of map between the generators of the subalgebra to the generators of the bigger starting algebra 
+
+
+			l={}
+
+			# mat_dict is the dictionary of generators of the subalgebra in S.C.
+
+			mat_dict={}
+
+			# adding positive and negative roots from the map established in l
+
 			for things in newproots:
-				#print newproots
 				newtup=tuple(0 for k in range(total))
 				for j in range(len(things)):
-					#print graphlist[i].node[newmap[j]]['linear_comb'],things[j]
 					newtup=add(newtup,tuple(mult(graphlist[i].node[newmap[j]]['linear_comb'],things[j])))
-				l.append(newtup)
-			#print l
-			list_to_gs=[tuple_to_col_vec(graphlist[i].node[points]['linear_comb']) for points in graphlist[i]]
-			newlist=gram_schmidt_orthogonalize_many([list_to_gs[0]],list_to_gs[1:])
-			m=[]			
-			for things in newlist:
-				things=normalize(things)
+				l[things]=newtup
+				mat_dict[things]=mat[newtup]
+				mat_dict[tuple(mult(things,-1))]=mat[tuple(mult(newtup,-1))]
+
+			# adding Cartan generators in S.C. 
+			## QUESTION: I don't know why in the earlier version I used a Gram Schmidt orthogonalization of the linear combinations! Now I have gotten rid of it.
+			
+			for num in range(len(newsroots[0])):
+				lc=graphlist[i].node[newmap[num]]['linear_comb']
 				newmat=zeros(dimension_rep)
-				for j in range(things.shape[0]):
-					newmat+=things[j]*mat[j]
-				m.append(newmat)
-			mat_dict={}
-			for things in l:
-				for objects in matlist:
-					if objects[0]==things:
-						mat_dict[things]=objects[1]
-						mat_dict[tuple(mult(things,-1))]=objects[1].H
-						break
-			p=0
-			for things in m:
-				mat_dict[p]=things
-				p+=1
+				for j in range(len(lc)):
+					newmat+=lc[j]*mat[j]
+				mat_dict[num]=newmat				
+				
+			# ADDING THE GENERATORS OF THE SUBALGEBRA TO GEN_DICT
+
 			gen_dict[index].append(mat_dict)
-		#finding the generators corresponding to an algebra
+		
+		# PHASE 3
 			
 		while len(newnetwork)>0:
 			a=first_highest(newnetwork)
