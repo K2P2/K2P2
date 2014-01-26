@@ -255,6 +255,7 @@ class Rep:
 				self.higgs_info=output[1]
 				self.U1_gen=output[2]
 				self.gen_list=output[3]
+				self.rem_gen_list=output[4]
 				self.broken=1
 			else:
 				raise Exception, "Break the algebra first!"	
@@ -282,14 +283,16 @@ class Rep:
 				translist=[self.particle_content[liegroup.count][i][0] for i in range(len(self.particle_content[liegroup.count]))]
 				parlist=self.particle_content[liegroup.count]
 				genlist=self.gen_list[liegroup.count]
+				rem_genlist=self.rem_gen_list[liegroup.count]
 				U1list=self.U1_gen
 				higgs=self.higgs_info
-				output=convert(namelist,numlist,parlist,genlist,U1list,higgs)
+				output=convert(namelist,numlist,parlist,genlist,rem_genlist,U1list,higgs)
 				self.broken_group_list=output[0]
 				self.broken_rep_dim=output[1]
 				self.broken_gen_list=output[2]
-				self.broken_U1_gen=output[3]
-				self.higgs=output[4]
+				self.broken_rem_gen_list=output[3]
+				self.broken_U1_gen=output[4]
+				self.higgs=output[5]
 				self.trans=translist
 				self.changed=1
 		else:

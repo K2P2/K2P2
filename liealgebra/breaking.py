@@ -692,13 +692,15 @@ def break_rep(family,dimension,highest_weight,count,process,process_info,break_i
 	#	1. particle content will contain info about the broken representations and the states contained in them(as linear combination of original states)
 	#	2. U1_vectors is ?
 	#	3. U1_gen is a dictionary that returns the U1 generator created when route 1 (simply remove a circle) is employed for breaking 
-	#	4. gen_dict is a dicitonary of other generators (details need to be spelled out)
-	#	5. higgs_info is information of singlets left out after breaking 
+	#	4. gen_dict is a dicitonary of generators corresponding to the subalgebras (details need to be spelled out)
+	#	5. remaining_gen_dict is the dictionary of the remaining generators
+	#	6. higgs_info is information of singlets left out after breaking 
 
 	particle_content={}
 	U1_vectors={}
 	U1_gen={}	
 	gen_dict={}
+	remaining_gen_dict={}
 	higgs_info={}
 
 	# What are these?
@@ -807,12 +809,14 @@ def break_rep(family,dimension,highest_weight,count,process,process_info,break_i
 		#	3. newnetwork is just a copy of the current weight diagram with some edges removed (to be modified)
 		# 	4. newnetwork_store is a stored copy of the current weight diagram
 		#	5. gen_dict[index] is the list of generators for this breaking step
+		#	6. list_of_keys contain the keys for the generators that go to mat_dict
 
 		maplist=[]
 		particle_content_list=[]
 		newnetwork=network.copy()
 		newnetwork_store=newnetwork.copy()
 		gen_dict[index]=[]
+		list_of_keys=[]
 		
 		# graphlist is the broken dynkin dynkin diagram at this breaking stage
 		# infolist is probably the family and dimensions of the group corresponding to the dynkin diagram at this breaking stage
@@ -822,7 +826,6 @@ def break_rep(family,dimension,highest_weight,count,process,process_info,break_i
 
 		# STEP 1: GET THE DICTIONARY OF GENERATORS OF THE SUBALGEBRAS
 
-		
 		for i in range(len(graphlist)):
 
 			# for each broken subalgebra 
@@ -841,8 +844,10 @@ def break_rep(family,dimension,highest_weight,count,process,process_info,break_i
 			l={}
 
 			# mat_dict is the dictionary of generators of the subalgebra in S.C.
+			# remaining dict is the dictionary of remaining generators
 
 			mat_dict={}
+			remaining_dict={}
 
 			# adding positive and negative roots from the map established in l
 
@@ -852,7 +857,9 @@ def break_rep(family,dimension,highest_weight,count,process,process_info,break_i
 					newtup=add(newtup,tuple(mult(graphlist[i].node[newmap[j]]['linear_comb'],things[j])))
 				l[things]=newtup
 				mat_dict[things]=mat[newtup]
+				list_of_keys.append(newtup)
 				mat_dict[tuple(mult(things,-1))]=mat[tuple(mult(newtup,-1))]
+				list_of_keys.append(tuple(mult(newtup,-1)))
 
 			# adding Cartan generators in S.C. 
 			## QUESTION: I don't know why in the earlier version I used a Gram Schmidt orthogonalization of the linear combinations! Now I have gotten rid of it.
@@ -867,6 +874,16 @@ def break_rep(family,dimension,highest_weight,count,process,process_info,break_i
 			# ADDING THE GENERATORS OF THE SUBALGEBRA TO GEN_DICT
 
 			gen_dict[index].append(mat_dict)
+
+
+		# ADD REMAINING GENERATORS TO A NEW DICTIONARY remaining_gen_dict
+
+		for keys in mat:
+			if keys not in list_of_keys and type(keys)!=int:
+				remaining_dict[keys]=mat[keys]
+
+		# adding the remaining generators
+		remaining_gen_dict[index]=remaining_dict
 		
 		# PHASE 3
 			
@@ -1237,7 +1254,7 @@ def break_rep(family,dimension,highest_weight,count,process,process_info,break_i
 						 							
 									
 								
-	return [particle_content,higgs_info,U1_gen,gen_dict]
+	return [particle_content,higgs_info,U1_gen,gen_dict,remaining_gen_dict]
 	#return 1	
 
 def break_rep_su2(family,dimension,highest_weight,ad):
@@ -1274,9 +1291,10 @@ def break_rep_su2(family,dimension,highest_weight,ad):
 	return [particle_content,higgs_info,U1_gen]
 	
 		
-def convert(namelist,numlist,parlist,genlist,U1list,higgs):
+def convert(namelist,numlist,parlist,genlist,rem_genlist,U1list,higgs):
 	l=[]
 	genlist1=[]
+	rem_genlist1={}
 	for things in genlist:
 		genlist1.append({})
 	U1list1={}
@@ -1314,6 +1332,9 @@ def convert(namelist,numlist,parlist,genlist,U1list,higgs):
 	for i in range(len(genlist)):
 		for keys in genlist[i]:
 			genlist1[i][keys]=(matrix.T)*genlist[i][keys]*matrix
+
+	for keys in rem_genlist:
+			rem_genlist1[keys]=(matrix.T)*rem_genlist[keys]*matrix
 	for keys in U1list:
 		U1list1[keys]=(matrix.T)*U1list[keys]*matrix
 	for keys in higgs:
@@ -1328,7 +1349,7 @@ def convert(namelist,numlist,parlist,genlist,U1list,higgs):
 				#higgs[keys][i]=matrix1*higgs[keys][i]
 			for i in range(len(higgs[keys])):
 				higgs1[keys].append(matrix1*higgs[keys][i])
-	return [namelist,numlist,genlist1,U1list1,higgs1]
+	return [namelist,numlist,genlist1,rem_genlist1,U1list1,higgs1]
 	
 def convert_su2(numlist,parlist,U1list,higgs):
 	l=[]
