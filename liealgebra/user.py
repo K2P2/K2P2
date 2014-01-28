@@ -140,6 +140,9 @@ class LieGroup:
 				self.network_info=output[5]
 				self.break_info_parent=output[3]
 				self.break_info_child=output[4]
+
+				# this is for automated user input to the Break function. break_history might need formatting for actual use.
+				self.break_history=output[5]
 			else:
 				print "Warning: The algebra has not been broken" 
 		#return output
