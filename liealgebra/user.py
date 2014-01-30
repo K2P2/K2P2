@@ -14,6 +14,7 @@ class LieGroup:
 			info=change_notation(args[0],args[1])
 			self.fam=info[0]
 			self.dim=info[1]
+			self.broken=0
 
 	def sroots(self):
 		if self.fam=='u' and self.dim==1:

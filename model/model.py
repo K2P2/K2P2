@@ -1,7 +1,7 @@
 # importing the LieAlgebra module
 
 import sys
-sys.path.insert(0, '/home/dibya/adding_final/liealgebra')
+sys.path.insert(0, '/home/dibya/K2P2/liealgebra')
 from user import *
 from sym import *
 from sympy import *
@@ -24,6 +24,7 @@ class Model:
 		self.susy_added=0
 		self.glag_added=0
 		self.flag_added=0
+		self.broken=0
 		self.matter=[]
 		
 	# public function to change the name of the model at any stage
@@ -35,10 +36,10 @@ class Model:
 
 	def add_susy(self,num):
 		if self.glag_added==0:
-			if num in [0,1,2,4]:
+			if num==0:
 				self.pr_add_susy(num)
 			else:
-				return Exception, "This package has support for N=0,1,2 and 4 SUSY"
+				return Exception, "This package has support for N=0 currently"
 		else:
 			print "Cannot modify susy at the current stage. Please start with a new model"
 
@@ -52,7 +53,7 @@ class Model:
 
 	def add_ggrp(self, *args):
 		if self.susy_added==1:
-			if self.flag_added==0:
+			if self.flag_added==0 or self.broken==1:
 				if len(args)>1 and len(args[1][0])==len(args[0].list) and len(args[1][1])==len(args[0].U1list):
 					self.coupling=args[1]
 				else:
@@ -62,7 +63,7 @@ class Model:
 					for num in range(len(args[0].list),len(args[0].list)+len(args[0].U1list),1):
 						coupling[1].append(Symbol('g%s' % num,commutative=False))
 					self.coupling=coupling
-				self.pr_add_ggrp(args[0],self.susy)
+				self.pr_add_ggrp(args[0])
 			else:
 				"Cannot change gauge group anymore"
 		else:
@@ -70,16 +71,16 @@ class Model:
 
 	# private function to change Gauge Group
 
-	def pr_add_ggrp(self,prdgrp,susy):
+	def pr_add_ggrp(self,prdgrp):
 		self.ggrp=prdgrp
-		self.pr_add_glag(self.ggrp,susy)
+		self.pr_add_glag()
 
-	def pr_add_glag(self,ggrp,susy):
+	def pr_add_glag(self):
 		expr_na_gauge=[]
 		expr_a_gauge=[]
 		namelist=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
-		glist=ggrp.list
-		U1list=ggrp.U1list
+		glist=self.ggrp.list
+		U1list=self.ggrp.U1list
 		rep_init=[[],[]]
 		for each in glist:
 			rep_init[0].append([0,])
@@ -118,7 +119,7 @@ class Model:
 			symbols=[]
 			for lorentz_index in ['mu','nu']:
 				for pos in ['up','down']:
-					newsym=CreateSymbols('gl',letter+'%s_%s_0' % (lorentz_index,pos), ggrp, rep,statedict,origin,lorentz_index,pos)
+					newsym=CreateSymbols('gl',letter+'%s_%s_0' % (lorentz_index,pos), self.ggrp, rep,statedict,origin,lorentz_index,pos)
 					symbols.append(newsym)
 			argument=(CreateDL(symbols[2],'mu','up')-CreateDL(symbols[0],'nu','up')+I*self.coupling[0][index]*(symbols[0]*symbols[2]-symbols[2]*symbols[0]))*(CreateDL(symbols[3],'mu','down')-CreateDL(symbols[1],'nu','down')+I*self.coupling[0][index]*(symbols[1]*symbols[3]-symbols[3]*symbols[1]))
 			expr_na_gauge.append(CreateTrace(argument))	
@@ -133,7 +134,7 @@ class Model:
 			symbols=[]
 			for lorentz_index in ['mu','nu']:
 				for pos in ['up','down']:
-					newsym=CreateSymbols('gl',letter+'%s_%s_0' % (lorentz_index,pos), ggrp, rep,None,origin,lorentz_index,pos)
+					newsym=CreateSymbols('gl',letter+'%s_%s_0' % (lorentz_index,pos), self.ggrp, rep,None,origin,lorentz_index,pos)
 					symbols.append(newsym)
 			argument=(CreateDL(symbols[2],'mu','up')-CreateDL(symbols[0],'nu','up')+I*self.coupling[1][index]*(symbols[0]*symbols[2]-symbols[2]*symbols[0]))*(CreateDL(symbols[3],'mu','down')-CreateDL(symbols[1],'nu','down')+I*self.coupling[1][index]*(symbols[1]*symbols[3]-symbols[3]*symbols[1]))
 			expr_a_gauge.append(argument)
@@ -178,12 +179,75 @@ class Model:
 #	1. Change the relevant file in /liealgebra to give all generators in the changed basis
 #	2. Add the routine for interactive breaking in model
 #	3. Add private functions to change glag, flag and slag
+
+
+
+	def Break(self, *args):
+		if self.glag_added==1:
+
+			# Breaking can proceed in the absence of matter. 
+			#	1. Need to define a function later on which will be able to add matter and break the reps and write flag and slag according to the most recent breaking scheme for that model. 
+			#	2. Also should add a function later on which can provide a new copy of model objects which can be independently manipulated (branches)
+
+			# CONTENT OF THIS FUNCTION
+
+
+			# Step 1: Let the user break the non abelian algebras as he pleases
+
+			# Way 1: When user mentions which algebras he wants broken -> he calls model.Break() which arguments
+
+			self.list_broken=[0 for i in range(len(self.ggrp.list))]
+				
+			if self.broken==0:
+				self.broken_glag=[[],self.glag_expr[1]]
+				for index in range(len(self.ggrp.list)):
+					if len(args)==0 or (len(args)>0 and index in args):
+						self.ggrp.list[index].Break()
+						if self.ggrp.list[index].broken==1:
+							self.list_broken[index]=1
+							self.broken_glag[0].append(self.pr_break_glag(index))
+						else:
+							self.broken_glag[0].append(self.pr_break_glag(index))
+					else:
+						self.broken_glag[0].append(self.pr_break_glag(index))
+				self.broken=1
+						
+			else:
+				for index in range(len(self.ggrp.list)):
+					if len(args)==0 or (len(args)>0 and index in args):
+						if self.ggrp.list[index].broken==1:
+							prev_breaking=self.ggrp.list[index].break_history
+							self.ggrp.list[index].Break()
+							if self.ggrp.list[index].broken==0 or self.ggrp.list[index].break_history!=prev_breaking:
+								self.list_broken[index]=1
+								print self.ggrp.list[index]
+								self.broken_glag[0][index]=self.pr_break_glag(index)
+						else:
+							self.ggrp.list[index].Break()
+							if self.ggrp.list[index].broken==1:
+								self.list_broken[index]=1
+								self.broken_glag[0][index]=self.pr_break_glag(index)
+									
+									
+
+
+
+								
+				
+				
+		else:
+			return Exception, "define the gauge group symmetry for this model first and then try breaking the symmetry" 
       
-		 
 
 
 
 
+
+	def pr_break_glag(self,index):
+		if self.ggrp.list[index].broken==0:
+			return 'intact'
+		else:
+			return 'broken'
 			
 			
 					
