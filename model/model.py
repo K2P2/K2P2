@@ -73,6 +73,8 @@ class Model:
 
 	def pr_add_ggrp(self,prdgrp):
 		self.ggrp=prdgrp
+		self.higgs_list=[{} for i in range(len(self.ggrp.list))]
+		self.last_rep_limit=[None for range(len(self.ggrp.list))]
 		self.pr_add_glag()
 
 	def pr_add_glag(self):
@@ -196,6 +198,8 @@ class Model:
 
 			# Way 1: When user mentions which algebras he wants broken -> he calls model.Break() which arguments
 
+			# I need to comment on this part
+
 			self.list_broken=[0 for i in range(len(self.ggrp.list))]
 				
 			if self.broken==0:
@@ -220,13 +224,14 @@ class Model:
 							self.ggrp.list[index].Break()
 							if self.ggrp.list[index].broken==0 or self.ggrp.list[index].break_history!=prev_breaking:
 								self.list_broken[index]=1
-								print self.ggrp.list[index]
 								self.broken_glag[0][index]=self.pr_break_glag(index)
+								self.higgs_list[index]={}
 						else:
 							self.ggrp.list[index].Break()
 							if self.ggrp.list[index].broken==1:
 								self.list_broken[index]=1
 								self.broken_glag[0][index]=self.pr_break_glag(index)
+								self.higgs_list[index]={}
 									
 									
 
@@ -237,7 +242,94 @@ class Model:
 				
 		else:
 			return Exception, "define the gauge group symmetry for this model first and then try breaking the symmetry" 
-      
+
+
+
+	def higgs_info(self, fork, rep_limit):
+		# Should we get higgs_info on ProdRep s too?
+
+		if self.broken==1
+			# setting up rep_limit_dict
+			if fork=='all' and type(rep_limit)==tuple:
+				if len(rep_limit)=2 and type(rep_limit[0])==int and type(rep_limit)==int and rep_limit[0]>0 and rep_limit[1]>rep_limit[0]:
+					rep_limit_dict={}
+					for index in range(len(self.ggrp.list)):
+						rep_limit_dict[index]=rep_limit
+				else:
+					return Exception, "invalid rep_limit"
+			elif (fork=='all' or fork=='select') and type(rep_limit)==dict:
+				for keys in rep_limit:
+					if rep_limit[keys] in range(len(self.ggrp.list)):
+						if len(rep_limit[keys])=2 and type(rep_limit[keys][0])==int and type(rep_limit[keys])==int and rep_limit[keys][0]>0 and rep_limit[keys][1]>rep_limit[keys][0]:
+							pass
+						else:
+							return Exception, "invalid rep_limit"
+					else:
+						return Exception, "group index out of range"
+				rep_limit_dict=rep_limit
+			else:
+				return Exception, "invalid input" 
+				
+			# checking for all groups
+			for num in range(len(self.ggrp.list)):
+				if num in rep_limit_dict.keys:
+					limit=rep_limit_dict[num]
+					# check if the group is broken
+					if self.grp.list[num].broken==0:
+						print "group number", num, "is not broken. cannot generate information on higgs for symmetry breaking of this group"
+					# otherwise
+					else:  
+						# if the group was broken recently
+						if self.list_broken[num]==1:
+							# initializing the list. note that this should be defined at thetime of defining Model.ggrp	
+							self.higgs_list[num]={}
+							# getting the list out of a function 
+							# the function is not yet present
+							dict_of_reps=generate_reps(self.ggrp.list[num], range(limit))
+							# breaking the reps and adding them to the list
+							for keys in list_of reps:
+								for reps in list_of_reps[keys]:
+									reps.Break()
+									try:
+										self.higgs_list[num][keys].append(reps)
+									except:
+										self.higgs_list[num][keys]=[reps,]
+							# changing self.last_rep_limit to its current value
+							self.last_rep_limit=limit
+						# if the grp was not broken recently but rep limit has changed
+						# note that self.last_rep_limit should be initialized at thetime of defining Model.ggrp
+						elif self.list_broken[num]==0 and limit!=self.last_rep_limit[num]:
+							# finding the new keys that need to be added
+							new_keys=()
+							for i in range(limit):
+								if i not in self.higgs_list[num].keys:
+									new_keys+=(i,)
+							# removing keys that are not in the present range
+							for keys in self.higgs_list[num].keys:
+								if keys not in range(limit):
+									del self.higgs_list[num][keys]
+							# finding reps corresponding to new keys
+							dict_of_reps=generate_reps(self.ggrp.list[num], range(limit))
+							# breaking the reps and adding them to the list
+							for keys in list_of reps:
+								for reps in list_of_reps[keys]:
+									reps.Break()
+									try:
+										self.higgs_list[num][keys].append(reps)
+									except:
+										self.higgs_list[num][keys]=[reps,]
+							# changing self.last_rep_limit to its current value
+	 						self.last_rep_limit=limit
+									
+										
+									 
+
+							 
+						
+					
+		
+		
+			
 
 
 
