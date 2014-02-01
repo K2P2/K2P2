@@ -287,13 +287,14 @@ class Model:
 							# the function is not yet present
 							dict_of_reps=generate_reps(self.ggrp.list[num], range(limit))
 							# breaking the reps and adding them to the list
-							for keys in list_of reps:
-								for reps in list_of_reps[keys]:
-									reps.Break()
+							for keys in dict_of reps:
+								for reps in dict_of_reps[keys]:
+									rep_object=Rep(self.ggrp.list[num],reps)
+									rep_object.Break()
 									try:
-										self.higgs_list[num][keys].append(reps)
+										self.higgs_list[num][keys].append(rep_object)
 									except:
-										self.higgs_list[num][keys]=[reps,]
+										self.higgs_list[num][keys]=[rep_object,]
 							# changing self.last_rep_limit to its current value
 							self.last_rep_limit=limit
 						# if the grp was not broken recently but rep limit has changed
@@ -311,13 +312,14 @@ class Model:
 							# finding reps corresponding to new keys
 							dict_of_reps=generate_reps(self.ggrp.list[num], range(limit))
 							# breaking the reps and adding them to the list
-							for keys in list_of reps:
-								for reps in list_of_reps[keys]:
-									reps.Break()
+							for keys in dict_of reps:
+								for reps in dict_of_reps[keys]:
+									rep_object=Rep(self.ggrp.list[num],reps)
+									rep_object.Break()
 									try:
-										self.higgs_list[num][keys].append(reps)
+										self.higgs_list[num][keys].append(rep_object)
 									except:
-										self.higgs_list[num][keys]=[reps,]
+										self.higgs_list[num][keys]=[rep_object,]
 							# changing self.last_rep_limit to its current value
 	 						self.last_rep_limit=limit
 									
@@ -341,12 +343,64 @@ class Model:
 		else:
 			return 'broken'
 			
-			
-					
-			
-			
+						
 			
 			
 		
+#---------------------------------SECONDARY FUNCTIONS--------------------------#
+
+
+def generate_reps(grp,limit):
+	cdim=grp.cdim()
+	rep_dict={}
+	for num in limit:
+		rep_dict[num]=find_reps(cdim,num)
+
+	return rep_dict
+
+def partition(number):
+	answer = set()
+     	answer.add((number, ))
+     	for x in range(1, number):
+     	    for y in partition(number - x):
+     	        answer.add(tuple(sorted((x, ) + y)))
+     	return answer
+
+def find_pos(pos_tuple, num):
+	if num==0:
+		answer=set()
+		answer.add(tuple())
+		return answer
+	else:
+		answer=set()
+		for i in range(len(pos_tuple)):
+			l=set()
+			for j in find_pos(pos_tuple[:i]+pos_tuple[i+1:], num-1):
+				if pos_tuple[i] not in j:
+					l.add((pos_tuple[i],)+j)
+			answer=answer.union(l)
+		return answer
+				
+					
 			
+def find_reps(cdim,num):
+	answer=[]
+	for part in partition(num):
+		length=len(part)
+		if len(part)<=cdim:
+			for pos in find_pos(tuple(j for j in range(cdim)), length):
+				l=[0 for i in range(cdim)]
+				ind=0
+				for elements in pos:
+					l[elements]=part[ind]
+					ind+=1
+				if l not in answer:
+					answer.append(l)
+	return answer
+					
+				  
+	
+	
+	 
+					
 		
