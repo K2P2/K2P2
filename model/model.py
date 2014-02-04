@@ -73,8 +73,8 @@ class Model:
 
 	def pr_add_ggrp(self,prdgrp):
 		self.ggrp=prdgrp
-		self.higgs_list=[{} for i in range(len(self.ggrp.list))]
-		self.last_rep_limit=[None for range(len(self.ggrp.list))]
+		self.higgs_list=[[] for i in range(len(self.ggrp.list))]
+		self.last_rep_dict=[None for i in range(len(self.ggrp.list))]
 		self.pr_add_glag()
 
 	def pr_add_glag(self):
@@ -225,13 +225,13 @@ class Model:
 							if self.ggrp.list[index].broken==0 or self.ggrp.list[index].break_history!=prev_breaking:
 								self.list_broken[index]=1
 								self.broken_glag[0][index]=self.pr_break_glag(index)
-								self.higgs_list[index]={}
+								self.higgs_list[index]=[]
 						else:
 							self.ggrp.list[index].Break()
 							if self.ggrp.list[index].broken==1:
 								self.list_broken[index]=1
 								self.broken_glag[0][index]=self.pr_break_glag(index)
-								self.higgs_list[index]={}
+								self.higgs_list[index]=[]
 									
 									
 
@@ -250,12 +250,12 @@ class Model:
 		# for getting a list of all reps within a limit, use the secondary function generate_reps  
 		# Should we get higgs_info on ProdRep s too?
 
-		if self.broken==1 
+		if self.broken==1: 
 			# checking for all groups
 			for num in range(len(self.ggrp.list)):
-				if num in rep_dict.keys:
+				if num in rep_dict.keys():
 					# check if the group is broken
-					if self.grp.list[num].broken==0:
+					if self.ggrp.list[num].broken==0:
 						print "group number", num, "is not broken. cannot generate information on higgs for symmetry breaking of this group"
 					# otherwise
 					else:  
@@ -289,6 +289,31 @@ class Model:
 								self.higgs_list[num].append(rep_object)
 							# changing self.last_rep_limit to its current value
 	 						self.last_rep_dict[num]+=new_reps
+
+
+	def display_higgs_info(self,num):
+		grp=self.ggrp.list[num] 
+		if grp.broken==1:
+			if len(self.higgs_list[num])>0:
+				print "family:", grp.fam, "dimension:", grp.dim, "\n"
+				string="Rep".rjust(20)+"Index".rjust(10)
+				for i in range(1,grp.count+1):
+					string+="S%s".rjust(10) % i
+				print string, "\n"	
+				for j in range(len(self.higgs_list[num])):
+					rep=self.higgs_list[num][j]
+					out=str(rep.hweight).rjust(20)+str(j).rjust(10)
+					for k in range(1,grp.count+1):
+						if len(rep.higgs_info[k])>0 and rep.higgs_info[k][0]!=None:
+							out+="Y".rjust(10)
+						else:
+							out+="N".rjust(10)
+					print out+"\n"
+			else:
+				print "Sorry, no reps found"
+		else:
+			print "Please break the group first"
+					
 									
 										
 									 
