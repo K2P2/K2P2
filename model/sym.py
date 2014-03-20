@@ -2,18 +2,46 @@ from sympy import *
 
 def CreateSymbols(group,name,*args):
 	if group=='f':
-		#the order of arguments is particle_type, particle_index, family_index, gauge_group, representation, matter_index, barred and chirality
+		# the order of arguments is 
+		#   particle_type: 'f'
+		#   particle_index: Sequencial integer for each added fermion
+		#   family_index: Sequencial integer for each new representation 
+		#   gauge_group, representation,
+		#   generation_index: Sequencial integer for each new fermion in the given rep
+		#   barred and chirality
 		a=Fermion(name,commutative=False)	
 
-		# 1 denotes either modification or definition and is followed by an argument, 0 denotes display for these attributes. 
+		# 1 denotes either modification or definition and is followed 
+		# by an argument, 0 denotes display for these attributes. 
 		a.part_type(1,'f')
 		a.part_ind(1,args[0])
 		a.fam_ind(1,args[1])
 		a.ggrp(1,args[2])
 		a.rep(1,args[3])
-		a.mat_ind(1,args[4])
+		a.generation(1,args[4])
 		a.barred(1,args[5])
 		a.chirality(1,args[6])
+		return a
+
+	if group=='s':
+		# the order of arguments is 
+		#   particle_type: 's'
+		#   particle_index: Sequencial integer for each added scalar 
+		#   family_index: Sequencial integer for each new representation 
+		#   gauge_group, representation,
+		#   generation_index: Sequencial integer for each new scalar in the given rep
+		#   barred 
+		a=Scalar(name,commutative=False)	
+
+		# 1 denotes either modification or definition and is followed 
+		# by an argument, 0 denotes display for these attributes. 
+		a.part_type(1,'s')
+		a.part_ind(1,args[0])
+		a.fam_ind(1,args[1])
+		a.ggrp(1,args[2])
+		a.rep(1,args[3])
+		a.generation(1,args[4])
+		a.barred(1,args[5])
 		return a
 
 	if group=='gs':
@@ -43,6 +71,7 @@ def CreateSymbols(group,name,*args):
 		return a
 
 
+
 class Fermion(Symbol):
 	def part_type(self,*args):
 		if args[0]==0:
@@ -50,7 +79,7 @@ class Fermion(Symbol):
 				return self.part_type
 			else:
 				return Exception, "the fermionic field %s does not have the attribute part_type" % self.name
-		elif args[1]==1:
+		elif args[0]==1:
 			self.part_type=args[1]
 		else:
 			raise Exception, "the constructor part_type takes only 1 (write) or 0 (display) as its first argument"
@@ -61,7 +90,7 @@ class Fermion(Symbol):
 				return self.part_ind
 			else:
 				return Exception, "the fermionic field %s does not have the attribute part_ind" % self.name
-		elif args[1]==1:
+		elif args[0]==1:
 			self.part_ind=args[1]
 		else:
 			raise Exception, "the constructor part_ind takes only 1 (write) or 0 (display) as its first argument"
@@ -71,7 +100,7 @@ class Fermion(Symbol):
 				return self.fam_ind
 			else:
 				return Exception, "the fermionic field %s does not have the attribute fam_ind" % self.name
-		elif args[1]==1:
+		elif args[0]==1:
 			self.fam_ind=args[1]
 		else:
 			raise Exception, "the constructor fam_ind takes only 1 (write) or 0 (display) as its first argument"	
@@ -81,7 +110,7 @@ class Fermion(Symbol):
 				return self.ggrp
 			else:
 				return Exception, "the fermionic field %s does not have the attribute ggrp" % self.name
-		elif args[1]==1:
+		elif args[0]==1:
 			self.ggrp=args[1]
 		else:
 			raise Exception, "the constructor ggrp takes only 1 (write) or 0 (display) as its first argument"
@@ -91,27 +120,27 @@ class Fermion(Symbol):
 				return self.rep
 			else:
 				return Exception, "the fermionic field %s does not have the attribute rep" % self.name
-		elif args[1]==1:
+		elif args[0]==1:
 			self.rep=args[1]
 		else:
 			raise Exception, "the constructor rep takes only 1 (write) or 0 (display) as its first argument"
-	def mat_ind(self,*args):
+	def generation(self,*args):
 		if args[0]==0:
-			if hasattr(self,'mat_ind'):
-				return self.mat_ind
+			if hasattr(self,'generation'):
+				return self.generation
 			else:
-				return Exception, "the fermionic field %s does not have the attribute mat_ind" % self.name
-		elif args[1]==1:
-			self.mat_ind=args[1]
+				return Exception, "the fermionic field %s does not have the attribute generation" % self.name
+		elif args[0]==1:
+			self.generation=args[1]
 		else:
-			raise Exception, "the constructor mat_ind takes only 1 (write) or 0 (display) as its first argument"
+			raise Exception, "the constructor generation takes only 1 (write) or 0 (display) as its first argument"
 	def barred(self,*args):
 		if args[0]==0:
 			if hasattr(self,'barred'):
 				return self.barred
 			else:
 				return Exception, "the fermionic field %s does not have the attribute barred" % self.name
-		elif args[1]==1:
+		elif args[0]==1:
 			self.barred=args[1]
 		else:
 			raise Exception, "the constructor barred takes only 1 (write) or 0 (display) as its first argument"
@@ -121,11 +150,85 @@ class Fermion(Symbol):
 				return self.chirality
 			else:
 				return Exception, "the fermionic field %s does not have the attribute chirality" % self.name
-		elif args[1]==1:
+		elif args[0]==1:
 			self.chirality=args[1]
 		else:
 			raise Exception, "the constructor chirality takes only 1 (write) or 0 (display) as its first argument"
 
+
+
+class Scalar(Symbol):
+	def part_type(self,*args):
+		if args[0]==0:
+			if hasattr(self,'part_type'):
+				return self.part_type
+			else:
+				return Exception, "the scalar field %s does not have the attribute part_type" % self.name
+		elif args[0]==1:
+			self.part_type=args[1]
+		else:
+			raise Exception, "the constructor part_type takes only 1 (write) or 0 (display) as its first argument"
+
+	def part_ind(self,*args):
+		if args[0]==0:
+			if hasattr(self,'part_ind'):
+				return self.part_ind
+			else:
+				return Exception, "the scalar field %s does not have the attribute part_ind" % self.name
+		elif args[0]==1:
+			self.part_ind=args[1]
+		else:
+			raise Exception, "the constructor part_ind takes only 1 (write) or 0 (display) as its first argument"
+	def fam_ind(self,*args):
+		if args[0]==0:
+			if hasattr(self,'fam_ind'):
+				return self.fam_ind
+			else:
+				return Exception, "the scalar field %s does not have the attribute fam_ind" % self.name
+		elif args[0]==1:
+			self.fam_ind=args[1]
+		else:
+			raise Exception, "the constructor fam_ind takes only 1 (write) or 0 (display) as its first argument"	
+	def ggrp(self,*args):
+		if args[0]==0:
+			if hasattr(self,'ggrp'):
+				return self.ggrp
+			else:
+				return Exception, "the scalar field %s does not have the attribute ggrp" % self.name
+		elif args[0]==1:
+			self.ggrp=args[1]
+		else:
+			raise Exception, "the constructor ggrp takes only 1 (write) or 0 (display) as its first argument"
+	def rep(self,*args):
+		if args[0]==0:
+			if hasattr(self,'rep'):
+				return self.rep
+			else:
+				return Exception, "the scalar field %s does not have the attribute rep" % self.name
+		elif args[0]==1:
+			self.rep=args[1]
+		else:
+			raise Exception, "the constructor rep takes only 1 (write) or 0 (display) as its first argument"
+	def generation(self,*args):
+		if args[0]==0:
+			if hasattr(self,'generation'):
+				return self.generation
+			else:
+				return Exception, "the scalar field %s does not have the attribute generation" % self.name
+		elif args[0]==1:
+			self.generation=args[1]
+		else:
+			raise Exception, "the constructor generation takes only 1 (write) or 0 (display) as its first argument"
+	def barred(self,*args):
+		if args[0]==0:
+			if hasattr(self,'barred'):
+				return self.barred
+			else:
+				return Exception, "the scalar field %s does not have the attribute barred" % self.name
+		elif args[0]==1:
+			self.barred=args[1]
+		else:
+			raise Exception, "the constructor barred takes only 1 (write) or 0 (display) as its first argument"
 
 class GaugeS(Symbol):
 	def gtype(self,*args):

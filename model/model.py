@@ -1,7 +1,7 @@
 # importing the LieAlgebra module
 
 import sys
-sys.path.insert(0, '/home/dibya/K2P2/liealgebra')
+sys.path.insert(0, '../liealgebra')
 from user import *
 from sym import *
 from sympy import *
@@ -138,7 +138,7 @@ class Model:
 				for pos in ['up','down']:
 					newsym=CreateSymbols('gl',letter+'%s_%s_0' % (lorentz_index,pos), self.ggrp, rep,None,origin,lorentz_index,pos)
 					symbols.append(newsym)
-			argument=(CreateDL(symbols[2],'mu','up')-CreateDL(symbols[0],'nu','up')+I*self.coupling[1][index]*(symbols[0]*symbols[2]-symbols[2]*symbols[0]))*(CreateDL(symbols[3],'mu','down')-CreateDL(symbols[1],'nu','down')+I*self.coupling[1][index]*(symbols[1]*symbols[3]-symbols[3]*symbols[1]))
+			argument=(CreateDL(symbols[2],'mu','up')-CreateDL(symbols[0],'nu','up'))*(CreateDL(symbols[3],'mu','down')-CreateDL(symbols[1],'nu','down'))
 			expr_a_gauge.append(argument)
 		self.glag_expr=[expr_na_gauge,expr_a_gauge]
 		newexpr=0
