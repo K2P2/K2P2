@@ -368,7 +368,7 @@ def CreateTrace(expr):
 	#print str(expr)
 	name="TR(%s)" % expr
 	#print name
-	res=Trace(name)
+	res=Trace(name,commutative=False)
 	#print res
 	res.set_expr(expr)
 	return res
@@ -382,7 +382,7 @@ class Trace(Symbol):
 
 def CreateDS(expr):
 	name='DS(%s)' % expr
-	res=DS(name)
+	res=DS(name,commutative=False)
 	res.set_expr(expr)
 	return res
 
@@ -394,7 +394,7 @@ class DS(Symbol):
 
 def CreateDL(expr,lorentz,pos):
 	name='DL_%s_%s(%s)' % (lorentz,pos,expr)
-	res=DL(name)
+	res=DL(name,commutative=False)
 	res.set_expr(expr)
 	res.set_lorentz(lorentz,pos)
 	return res
@@ -407,7 +407,4 @@ class DL(Symbol):
 	def set_lorentz(self,lorentz,pos):
 		self.lorentz=lorentz
 		self.pos=pos	
-
-
-
 
