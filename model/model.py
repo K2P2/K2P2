@@ -9,8 +9,8 @@ from sympy import *
 
 class Model:
 
-	# initialize model with optional name argument
-
+#===================================================================================================
+# initialize model with optional name argument
 	def __init__(self,*args):
 		if len(args)==0:
 			pass
@@ -19,21 +19,38 @@ class Model:
 		else:
 			return Exception, "Model object constructor can take at most 1 argument" 
 
-		# flags
-
+	# Controll flags
 		self.susy_added=0
 		self.glag_added=0
 		self.flag_added=0
 		self.broken=0
-		self.matter=[]
-		
-	# public function to change the name of the model at any stage
 
+	# Dicts, index maps etc for referencing 
+		self.Fermion_reps = {} # Dictionary from fermion reps(families) to integers for indexing
+		self.Scalar_reps = {} # Dictionary from scalar reps(families) to integers for indexing
+
+	# Dictionaries of fermions and scalars organised by different indices for referencing (for Feynman rules etc.)
+		self.Fermion={}	# Dictionary of fermions added, indext by part_ind
+		self.Scalar={}	# Dictionary of scalars added, indext by part_ind
+		self.FermionFG = {}	# Dict of Dict of fermions labeled by family and generation
+		self.ScalarFG = {}	# Dict of Dict of scalars labeled by family and generation
+		# Need a dictionary for the gauge bosons etc.
+
+	# Lagrangian as lists of terms
+		self.LGauge = []		# Contains two lists, [0] for Non-Abelian and [1] for Abelian
+		self.LFermion = []		# Fermion kinetic term and gauge interaction term
+		self.LScalar = []		# Scalar kinetic term and gauge interaction term
+		self.LYukawa = []		# Adhoc Yukawa terms
+		self.LPotential = []	# Adhoc Scalar potential term for SSB
+		self.LOthers = []		# List of other adhoc terms like fermion mass, scalar mass etc.
+
+#===================================================================================================
+# public function to change the name of the model at any stage
 	def change_name(self,name):
 		self.name=name
 
-	# public function to change SUSY
-
+#===================================================================================================
+# public function to change SUSY
 	def add_susy(self,num):
 		if self.glag_added==0:
 			if num==0:
@@ -43,14 +60,14 @@ class Model:
 		else:
 			print "Cannot modify susy at the current stage. Please start with a new model"
 
-	# private function to change SUSY
-
+#===================================================================================================
+# private function to change SUSY
 	def pr_add_susy(self,num):
 		self.susy=num
 		self.susy_added=1
 
-	# public function to change Gauge Group
-
+#===================================================================================================
+# public function to change Gauge Group
 	def add_ggrp(self, *args):
 		if self.susy_added==1:
 			if self.flag_added==0 or self.broken==1:
@@ -69,18 +86,21 @@ class Model:
 		else:
 			print "Please define SUSY before entering gauge group"
 
-	# private function to change Gauge Group
-
+#===================================================================================================
+# private function to change Gauge Group
 	def pr_add_ggrp(self,prdgrp):
 		self.ggrp=prdgrp
 		self.higgs_list=[[] for i in range(len(self.ggrp.list))]
 		self.last_rep_dict=[None for i in range(len(self.ggrp.list))]
 		self.pr_add_glag()
 
+#===================================================================================================
+# private function to add Gauge Lagrangian for Abelian and Non-Abelian Gauge Fields
 	def pr_add_glag(self):
 		expr_na_gauge=[]
 		expr_a_gauge=[]
-		namelist=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+		namelist=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R', \
+			'S','T','U','V','W','X','Y','Z']
 		glist=self.ggrp.list
 		U1list=self.ggrp.U1list
 		rep_init=[[],[]]
@@ -88,6 +108,8 @@ class Model:
 			rep_init[0].append([0,])
 		for each in U1list:
 			rep_init[1].append(0)
+
+	# LGauge for Non-Abelian Gauge Fields begins here
 		for index in range(len(glist)):
 			letter=namelist[0]
 			namelist=namelist[1:]
@@ -121,11 +143,16 @@ class Model:
 			symbols=[]
 			for lorentz_index in ['mu','nu']:
 				for pos in ['up','down']:
-					newsym=CreateSymbols('gl',letter+'%s_%s_0' % (lorentz_index,pos), self.ggrp, rep,statedict,origin,lorentz_index,pos)
+					newsym=CreateSymbols('gl',letter+'%s_%s_0' %(lorentz_index,pos), self.ggrp, \
+						rep,statedict,origin,lorentz_index,pos)
 					symbols.append(newsym)
-			argument=(CreateDL(symbols[2],'mu','up')-CreateDL(symbols[0],'nu','up')+I*self.coupling[0][index]*(symbols[0]*symbols[2]-symbols[2]*symbols[0]))*(CreateDL(symbols[3],'mu','down')-CreateDL(symbols[1],'nu','down')+I*self.coupling[0][index]*(symbols[1]*symbols[3]-symbols[3]*symbols[1]))
+			argument=(CreateDL(symbols[2],'mu','up')-CreateDL(symbols[0],'nu','up')  \
+				+I*self.coupling[0][index]*(symbols[0]*symbols[2]-symbols[2]*symbols[0]))* \
+				(CreateDL(symbols[3],'mu','down')-CreateDL(symbols[1],'nu','down')  \
+				+I*self.coupling[0][index]*(symbols[1]*symbols[3]-symbols[3]*symbols[1]))
 			expr_na_gauge.append(CreateTrace(argument))	
 
+	# LGauge for Non-Abelian Gauge Fields begins here
 		for index in range(len(U1list)):
 			letter=namelist[0]
 			namelist=namelist[1:]
@@ -136,9 +163,11 @@ class Model:
 			symbols=[]
 			for lorentz_index in ['mu','nu']:
 				for pos in ['up','down']:
-					newsym=CreateSymbols('gl',letter+'%s_%s_0' % (lorentz_index,pos), self.ggrp, rep,None,origin,lorentz_index,pos)
+					newsym=CreateSymbols('gl',letter+'%s_%s_0' % (lorentz_index,pos), self.ggrp, \
+						rep,None,origin,lorentz_index,pos)
 					symbols.append(newsym)
-			argument=(CreateDL(symbols[2],'mu','up')-CreateDL(symbols[0],'nu','up'))*(CreateDL(symbols[3],'mu','down')-CreateDL(symbols[1],'nu','down'))
+			argument=(CreateDL(symbols[2],'mu','up')-CreateDL(symbols[0],'nu','up'))*  \
+				(CreateDL(symbols[3],'mu','down')-CreateDL(symbols[1],'nu','down'))
 			expr_a_gauge.append(argument)
 		self.glag_expr=[expr_na_gauge,expr_a_gauge]
 		newexpr=0
@@ -147,37 +176,137 @@ class Model:
 		self.glag=newexpr
 		#print self.glag
 		self.glag_added=1
+		self.LGauge.append(expr_na_gauge)
+		self.LGauge.append(expr_a_gauge)
+# End of pr_add_gauge
+#===================================================================================================
 
-
-	def add_matter(self,*args):
-		if model.glag_added==1:
-				if flag_added==1:
-					self.pr_add_matter(self,1,*args)
-				else:	
-					self.pr_add_matter(self,0,*args)
-		else:
-			return Exception, "Cannot add matter if gauge group is not defined"
+#--------------------------------------------
+#   Need to re-think this function
+#
+#	def add_matter(self,mtype,*args):
+#		if model.glag_added==1:
+#				if mtype=="f":
+#					self.pr_add_fermion(self,1,*args)
+#				elif mtype=="s":	
+#					self.pr_add_scalar(self,0,*args)
+#				else:
+#					return Exception, "Matter type %s is not understood. Allowed values are 'f' and 's'" % mtype
+#		else:
+#			return Exception, "Cannot add matter if gauge group is not defined"
+#--------------------------------------------
 	
-	def pr_add_matter(self,bin,*args):
-		if bin==0:
-			self.flag=0
-			for each in args:
-				self.pr_add_flag(each)
-				self.matter.append(each)
+#===================================================================================================
+# Private function to add fermion and and L_Fermion
+	def pr_add_fermion(self,chirality,*args):
+		for lf in range(len(args)):
+			f_rep=tuple(args[lf])
 
+		# Indexing the fermion family/representation
+			if f_rep in self.Fermion_reps.keys():
+				fam_ind = self.Fermion_reps[f_rep]
+			else:
+				fam_ind = len(self.Fermion_reps)+1
+				self.Fermion_reps[f_rep] = fam_ind
 
+		# Indexing the fermion generation 
+			if fam_ind in self.FermionFG:
+				generation = len(self.FermionFG[fam_ind])+1
+			else:
+				self.FermionFG[fam_ind]={}
+				generation=1
 
-# I am assuming that Ritesh Sir will add the codes for adding matter to model.py. Once this is done, flag and slag will be defined and flags for functions that change gauge groups and susy will be set down. At this point the routine for breaking the algebra becomes available. This is a function which takes the index of the lie group as input. Once this function is called, an interactive breaking program will take over (this has to be automated later) asking the user about how the algebra is to be broken. Once this input is fully provided new attributes become available. These new attributes are:
+		# The particle index for fermion
+			part_ind = len(self.Fermion)+1
 
-#  1. particle content: tells us how the representation is broken into smaller representations and what states of the original representation correspond to smaller representations
-#  2. higgs_info: tells us if there are singlets left after the breaking (Q: does this also check U1 charge? A: no it does not, it just returns singlets that break certain steps)
-#  3. U1_gen: gives the U1 generator (in the new basis) formed as a result of deletion of a circle in the dynkin diagram 
-#  4. gen_list: this is the list of generators of the algebra in the new broken basis(?) this currently gives only those generators that are a part of the subalgebras. Need to add codes in /liealgebra to also give matrices corresponding to other generators in the broken basis
+		# Get the fermion and anti-fermion symbols			
+			f = CreateSymbols('f',"f_%s" % part_ind, part_ind, fam_ind, self.ggrp, f_rep, generation, 0, chirality)
+			F = CreateSymbols('f',"F_%s" % part_ind, part_ind, fam_ind, self.ggrp, f_rep, generation, 1, chirality)
 
+		# Register the fermion and anti-fermion symbols
+			self.Fermion[part_ind] = (f,F)
+			self.FermionFG[fam_ind][generation] = (f,F)
+		# Add lagrangian
+			self.LFermion.append(F*CreateDS(f))
+			# No gauge interaction is add
+		# Need to settle the issue of Gauge bosons
+
+#===================================================================================================
+# Private function to add fermion and and L_Fermion
+	def pr_add_scalar(self,*args):
+		for ls in range(len(args)):
+			s_rep=tuple(args[ls])
+
+		# Indexing the scalar family/representation
+			if s_rep in self.Scalar_reps.keys():
+				fam_ind = self.Scalar_reps[s_rep]
+			else:
+				fam_ind = len(self.Scalar_reps)+1
+				self.Scalar_reps[s_rep] = fam_ind
+
+		# Indexing the scalar generation 
+			if fam_ind in self.ScalarFG:
+				generation = len(self.ScalarFG[fam_ind])+1
+			else:
+				self.ScalarFG[fam_ind]={}
+				generation=1
+
+		# The particle index for scalar
+			part_ind = len(self.Scalar)+1
+
+		# Get the scalar anti-scalar symbols			
+			s = CreateSymbols('s',"s_%s" % part_ind, part_ind, fam_ind, self.ggrp, s_rep, generation, 0)
+			S = CreateSymbols('s',"S_%s" % part_ind, part_ind, fam_ind, self.ggrp, s_rep, generation, 1)
+
+		# Register the scalar anti-scalar symbols
+			self.Scalar[part_ind] = (s,S)
+			self.ScalarFG[fam_ind][generation] = (s,S)
+		# Add lagrangian
+			self.LScalar.append(CreateDL(S,'mu','up')*CreateDL(s,'mu','down'))
+			# No gauge interaction is add
+		# Need to settle the issue of Gauge bosons
+
+#===================================================================================================
+# I am assuming that Ritesh Sir will add the codes for adding matter to model.py. Once this is done,
+# flag and slag will be defined and flags for functions that change gauge groups and susy will be 
+# set down. At this point the routine for breaking the algebra becomes available. This is a function
+# which takes the index of the lie group as input. Once this function is called, an interactive 
+# breaking program will take over (this has to be automated later) asking the user about how the 
+# algebra is to be broken. Once this input is fully provided new attributes become available. 
+# These new attributes are:
+#
+#  1. particle content: tells us how the representation is broken into smaller representations and 
+#     what states of the original representation correspond to smaller representations
+#  2. higgs_info: tells us if there are singlets left after the breaking (Q: does this also check 
+#     U1 charge? A: no it does not, it just returns singlets that break certain steps)
+#  3. U1_gen: gives the U1 generator (in the new basis) formed as a result of deletion of a circle
+#     in the dynkin diagram 
+#  4. gen_list: this is the list of generators of the algebra in the new broken basis(?) this 
+#     currently gives only those generators that are a part of the subalgebras. Need to add codes 
+#     in /liealgebra to also give matrices corresponding to other generators in the broken basis
+#
+# I am assuming that Ritesh Sir will add the codes for adding matter to model.py. Once this is done,
+# flag and slag will be defined and flags for functions that change gauge groups and susy will be 
+# set down. At this point the routine for breaking the algebra becomes available. This is a function
+# which takes the index of the lie group as input. Once this function is called, an interactive
+# breaking program will take over (this has to be automated later) asking the user about how the 
+# algebra is to be broken. Once this input is fully provided new attributes become available. 
+# These new attributes are:
+#
+#  1. particle content: tells us how the representation is broken into smaller representations and 
+#     what states of the original representation correspond to smaller representations
+#  2. higgs_info: tells us if there are singlets left after the breaking (Q: does this also check 
+#     U1 charge? A: no it does not, it just returns singlets that break certain steps)
+#  3. U1_gen: gives the U1 generator (in the new basis) formed as a result of deletion of a circle
+#     in the dynkin diagram 
+#  4. gen_list: this is the list of generators of the algebra in the new broken basis(?) this 
+#     currently gives only those generators that are a part of the subalgebras. Need to add codes 
+#     in /liealgebra to also give matrices corresponding to other generators in the broken basis
+#
 # Based on these new attributes, we need to rewrite the lagrangian : glag, flag and slag.
-
+#
 # Steps
-
+#
 #	1. Change the relevant file in /liealgebra to give all generators in the changed basis
 #	2. Add the routine for interactive breaking in model
 #	3. Add private functions to change glag, flag and slag
@@ -187,18 +316,19 @@ class Model:
 	def Break(self, *args):
 		if self.glag_added==1:
 
-			# Breaking can proceed in the absence of matter. 
-			#	1. Need to define a function later on which will be able to add matter and break the reps and write flag and slag according to the most recent breaking scheme for that model. 
-			#	2. Also should add a function later on which can provide a new copy of model objects which can be independently manipulated (branches)
-
-			# CONTENT OF THIS FUNCTION
-
-
-			# Step 1: Let the user break the non abelian algebras as he pleases
-
-			# Way 1: When user mentions which algebras he wants broken -> he calls model.Break() which arguments
-
-			# I need to comment on this part
+# Breaking can proceed in the absence of matter. 
+#	1. Need to define a function later on which will be able to add matter and break the reps and
+#      write flag and slag according to the most recent breaking scheme for that model. 
+#	2. Also should add a function later on which can provide a new copy of model objects which can
+#      be independently manipulated (branches)
+#
+# CONTENT OF THIS FUNCTION
+#
+# Step 1: Let the user break the non abelian algebras as he pleases
+#
+# Way 1: When user mentions which algebras he wants broken -> he calls model.Break() which arguments
+#
+# I (Dibya) need to comment on this part
 
 			self.list_broken=[0 for i in range(len(self.ggrp.list))]
 				
