@@ -848,18 +848,23 @@ def break_rep(family,dimension,highest_weight,count,process,process_info,break_i
 
 			mat_dict={}
 			remaining_dict={}
-
 			# adding positive and negative roots from the map established in l
 
 			for things in newproots:
 				newtup=tuple(0 for k in range(total))
 				for j in range(len(things)):
-					newtup=add(newtup,tuple(mult(graphlist[i].node[newmap[j]]['linear_comb'],things[j])))
-				l[things]=newtup
-				mat_dict[things]=mat[newtup]
-				list_of_keys.append(newtup)
-				mat_dict[tuple(mult(things,-1))]=mat[tuple(mult(newtup,-1))]
-				list_of_keys.append(tuple(mult(newtup,-1)))
+					newtup=add(newtup,mult(graphlist[i].node[newmap[j]]['linear_comb'],things[j]))
+
+				# converting newtup into python datatype
+				newtup_py=tuple()
+				for data in range(len(newtup)):
+					newtup_py+=(int(newtup[data]),)
+						
+				l[things]=newtup_py
+				mat_dict[things]=mat[newtup_py]
+				list_of_keys.append(newtup_py)
+				mat_dict[tuple(mult(things,-1))]=mat[tuple(mult(newtup_py,-1))]
+				list_of_keys.append(tuple(mult(newtup_py,-1)))
 
 			# adding Cartan generators in S.C. 
 			## QUESTION: I don't know why in the earlier version I used a Gram Schmidt orthogonalization of the linear combinations! Now I have gotten rid of it.
