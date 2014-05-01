@@ -488,47 +488,83 @@ def tens_prod(mat,dimlist,index):
 
 #------------------------------------------------PRIMARYFUNCTIONS-------------------------------------------------#
 
-def break_algebra(fam,dim):
-	total=dim
-	first=generate_dynkin(fam,dim)
-	for nodes in first:
-		first.node[nodes]['linear_comb']=tuple(0 for i in range(nodes))+(1,)+tuple(0 for i in range(total-nodes-1))
-	process={0:[first]}
-	info=identify_dynkin(first)['group']
-	name=info[0]+'('+str(info[1])+')'
-	process_name={0:[name]}
-	process_info={0:[info]}
-	first.graph['name']=name
-	break_info_parent={}
-	break_info_child={}
+def break_algebra(list_of_grp):
 
-	G=Graph()
-	G.add_node(first,height=0,code=info)
+	# process -> list of dictionaries, each dictionary contains the dynkin diagrams for each breaking stage of a single group/algebra
 
-	#print G.node[first]['height']
+	process=[]
+	
+	# process_name -> list of dictionaries, each dictionary contains the conventional name of the groups present in each breaking stage starting from an intial group/algebra
 
-	count=0
-	number=-1
-	network_info=[[0,None]]
+	process_name=[]
+
+	# process_info -> contains same information as process_name but in a non-printable non-string format
+
+	process_info=[]
+
+	break_info_parent=[]
+
+	break_info_child=[]
+
+	network_info=[]
+
+	# G -> is a list of informative graphs , each graph shows how the starting algebra breaks down
+
+	G=[]
+
+	count=[]
+	number=[]	
+
+	# generating dynkin diagrams for each group and initializing other variables (e.g. process, process_name etc.)
+
+	for index in range(len(list_of_grp)):
+		total=list_of_grp[index][1]
+		first=generate_dynkin(list_of_grp[index][0],list_of_grp[index][1])
+		for nodes in first:
+			first.node[nodes]['linear_comb']=tuple(0 for i in range(nodes))+(1,)+tuple(0 for i in range(total-nodes-1))
+		
+		process.append({0:[first]})
+		info=identify_dynkin(first)['group']
+		name=info[0]+'('+str(info[1])+')'
+		process_name.append({0:[name]})
+		process_info.append({0:[info]})
+		first.graph['name']=name
+		break_info_parent.append({})
+		break_info_child.append({})
+		G.append(Graph())
+		G[index].add_node(first,height=0,code=info)
+		network_info.append([[0,None]])
+		count.append(0)
+		number.append(-1)
+
+	step_no=0
+	
 
 	while True:
-		print "Step %s" % str(count)
+		print "Step %s" % str(step_no)
 		print "You can break any of the following algebra/subalgebras in this step"
-		print process_name[count]
-		print "To break an algebra/subalgebra, enter the position index of the algebra/subalgebra in the above list, enter e to exit"
-		action=raw_input('Please enter your choice:')
+		temp=[]
+		for index in range(len(process_name)):
+			temp.append(process_name[index][count[index]])
+		print temp
+		print "To break an algebra/subalgebra, enter the list index and position index of the algebra/subalgebra in the above list in the form [list_index,position_index], enter 'e' to exit"
+		action=input('Please enter your choice:')
 		if action=='e':
 			break
 		else:
 			try:
-				if int(action)<=len(process_name[count]):
-					i=int(action)
+				list_index=action[0]
+				pos_index=action[1]
+				process_name_current=process_name[list_index][count[list_index]]
+				process_current=process[list_index][count[list_index]]
+				process_info_current=process_info[list_index][count[list_index]]
+				if pos_index<=len(process_name_current):
 					m,q,l=[],[],[]
-					info=process_name[count][i]
+					info=process_name_current[pos_index]
 					keep_intact=1
 					print "This is a %s algebra\n" % info
 					while True:
-						if fam=='a' and dim==1:
+						if info[0]=='a' and info[1]==1:
 							print "The following actions are allowed:\n[1]Break via removing a circle\n[3]Show the dynkin diagram\n[4]Keep Intact"
 						else:	
 							print "The following actions are allowed:\n[1]Break via removing a circle\n[2]Break via adding the lowest weight followed by removing a circle\n[3]Show the dynkin diagram\n[4]Keep Intact"
@@ -536,7 +572,7 @@ def break_algebra(fam,dim):
 						if choice==1:
 							rem=input("remove circle no:")
 							try:
-								H=process[count][i].copy()
+								H=process_current[pos_index].copy()
 								H.remove_node(rem)
 								#print "the algebra was broken down to:"
 								keep_intact=0
@@ -550,16 +586,16 @@ def break_algebra(fam,dim):
 									#print newname
 									new.graph['name']=newname
 									l.append(new)
-									G.add_node(new,height=G.node[process[count][i]]['height']+1,code=newinfo)	
-									G.add_edge(process[count][i],new,mode=1,delete=rem)
+									G[list_index].add_node(new,height=G[list_index].node[process_current[pos_index]]['height']+1,code=newinfo)	
+									G[list_index].add_edge(process_current[pos_index],new,mode=1,delete=rem)
 						#network=remove_edges(network,rem)
 						#print network.edges(data=True)
-								network_info.append([1,rem])
+								network_info[list_index].append([1,rem])
 							except NetworkXError:
 								print "problem removing node, please take a look at the dynkin diagram (option [3]) to make sure that the node specified for removing actually exists"
 							break
 						elif choice==2:
-							if (fam=='a' and dim==1):
+							if (info[0]=='a' and info[1]==1):
 								print "Error: Invalid input"
 							else:
 								P=re.compile('\(')
@@ -569,27 +605,27 @@ def break_algebra(fam,dim):
 								M=P.search(info)
 								dimension=int(M.group())
 								lowest_dict=lowest_root_gen(family,dimension,None)
-								H=process[count][i].copy()
-								H.add_node(number)
+								H=process_current[pos_index].copy()
+								H.add_node(number[list_index])
 								lines_with_sr=lowest_dict['lines_with_sr']
-								mapping=identify_dynkin(process[count][i])['mapping']
+								mapping=identify_dynkin(process_current[pos_index])['mapping']
 								for k in range(len(lines_with_sr)):
 									if lines_with_sr[k]!=0:
-										H.add_edge(mapping[k],number)
-										H[mapping[k]][number]['type']=lines_with_sr[k]	
+										H.add_edge(mapping[k],number[list_index])
+										H[mapping[k]][number[list_index]]['type']=lines_with_sr[k]	
 								print "Showing the resulting dynkin diagram now. You will be asked to remove a circle subsequently"
 								linear_comb=lowest_dict['linear_relation']
 								newvector=tuple(0 for k in range(total))
 								for j in range(len(linear_comb)):
 									newvector=add(newvector,tuple(mult(H.node[mapping[j]]['linear_comb'],linear_comb[j])))
-								H.node[number]['linear_comb']=newvector	
+								H.node[number[list_index]]['linear_comb']=newvector	
 								draw_graph(H)
 								plt.show()
 								rem=input("remove circle no:")
 								H.remove_node(rem)
-								H=change_node(H,number,rem)
-								mapping=change_mapping(mapping,number,rem)
-								number-=1
+								H=change_node(H,number[list_index],rem)
+								mapping=change_mapping(mapping,number[list_index],rem)
+								number[list_index]-=1
 							#print "the algebra was broken down to:"
 								keep_intact=0
 								conn=connected_components(H)
@@ -605,8 +641,8 @@ def break_algebra(fam,dim):
 									l.append(new)
 									#print process[count][i]
 									#print count,i
-									G.add_node(new,height=G.node[process[count][i]]['height']+1,code=newinfo)		
-									G.add_edge(process[count][i],new,mode=2,delete=rem)
+									G[list_index].add_node(new,height=G[list_index].node[process_current[pos_index]]['height']+1,code=newinfo)		
+									G[list_index].add_edge(process_current[pos_index],new,mode=2,delete=rem)
 							#network=remove_edges(network,rem)
 							#network=change_node_tuples(network,rem,lowest_dict['linear_relation'],mapping,total)
 							#commutator=lowest_dict['commutator']
@@ -615,11 +651,11 @@ def break_algebra(fam,dim):
 							#new_mat=sqrt(1/((current_mat.H*current_mat).trace()))*current_mat
 							#network=join_with_new(network,rem,lowest_dict['cartan_lowest'],mapping,total)
 							#main['matrices'][rem]=new_mat
-								network_info.append([2,[rem,lowest_dict['linear_relation'],mapping,total,lowest_dict['cartan_lowest']]])
+								network_info[list_index].append([2,[rem,lowest_dict['linear_relation'],mapping,total,lowest_dict['cartan_lowest']]])
 								break
 						elif choice==3:
 							print "The dynkin diagram will now be displayed. Please close the graph window to proceed"
-							draw_graph(process[count][i])
+							draw_graph(process_current[pos_index])
 							plt.show()
 						elif choice==4:
 							break
@@ -628,17 +664,18 @@ def break_algebra(fam,dim):
 					if keep_intact==1:
 						pass
 					else:
-						break_info_parent[count]=[0 for j in range(i)]+[1,]+[0 for j in range(len(process[count])-i-1)]
-						break_info_child[count+1]=[0 for j in range(i)]+[1 for j in range(len(l))]+[0 for j in range(len(process[count])-i-1)]
-						process[count+1]=process[count][:i]+l+process[count][i+1:]
-						process_name[count+1]=process_name[count][:i]+m+process_name[count][i+1:]
-						process_info[count+1]=process_info[count][:i]+q+process_info[count][i+1:]
-						count+=1
+						break_info_parent[list_index][count[list_index]]=[0 for j in range(pos_index)]+[1,]+[0 for j in range(len(process_current)-pos_index-1)]
+						break_info_child[list_index][count[list_index]+1]=[0 for j in range(pos_index)]+[1 for j in range(len(l))]+[0 for j in range(len(process_current)-pos_index-1)]
+						process[list_index][count[list_index]+1]=process_current[:pos_index]+l+process_current[pos_index+1:]
+						process_name[list_index][count[list_index]+1]=process_name_current[:pos_index]+m+process_name_current[pos_index+1:]
+						process_info[list_index][count[list_index]+1]=process_info_current[:pos_index]+q+process_info_current[pos_index+1:]
+						count[list_index]+=1
 			except ValueError:
 				print "invalid input, try again"		
 			
 			
 	return [count,process,process_info,break_info_parent,break_info_child,network_info]
+
 
 def break_rep(family,dimension,highest_weight,count,process,process_info,break_info_parent,break_info_children,network_info,ad):
 

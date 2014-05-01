@@ -132,15 +132,15 @@ class LieGroup:
 			self.broken=0
 			family=self.fam
 			dimension=self.dim
-			output=break_algebra(family,dimension)
-			if output[0]>0:
+			output=break_algebra([[family,dimension]])
+			if output[0][0]>0:
 				self.broken=1
-				self.count=output[0]
-				self.process=output[1]
-				self.process_info=output[2]
-				self.network_info=output[5]
-				self.break_info_parent=output[3]
-				self.break_info_child=output[4]
+				self.count=output[0][0]
+				self.process=output[1][0]
+				self.process_info=output[2][0]
+				self.network_info=output[5][0]
+				self.break_info_parent=output[3][0]
+				self.break_info_child=output[4][0]
 
 				# this is for automated user input to the Break function. break_history might need formatting for actual use.
 				self.break_history=output[5]
@@ -315,11 +315,24 @@ class ProdGroup:
 		self.list=list_of_groups
 		self.U1list=list_of_U1grp
 
-	def Break(self,num):
-		try:
-			self.list[num].Break()
-		except IndexError:
-			raise Exception, "Sorry, cannot break the group since there are no LieGroups corresponding to this index"
+	def Break(self):
+		temp=[]
+		for each in self.list:
+			temp.append([each.fam,each.dim])
+		output=break_algebra(temp)
+		for index in range(len(self.list)):
+			if output[0][index]>0:
+				self.list[index].broken=1
+				self.list[index].count=output[0][index]
+				self.list[index].process=output[1][index]
+				self.list[index].process_info=output[2][index]
+				self.list[index].network_info=output[5][index]
+				self.list[index].break_info_parent=output[3][index]
+				self.list[index].break_info_child=output[4][index]
+
+				# this is for automated user input to the Break function. break_history might need formatting for actual use.
+				self.list[index].break_history=output[5][index]
+					
 	
 	def sroots(self,num):
 		try:
